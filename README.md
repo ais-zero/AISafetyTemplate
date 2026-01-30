@@ -26,6 +26,13 @@ For this sprint, the AI Assembly (model/system/framework) will be mocked and the
 #### Why target Python Environments?
 Good question?! Python is a low-entry, dynamically-typed scripting language with an often wild, lesser-maintained ecosystem. We *should* be using a formal, compiled language like Rust or Haskell. The reality is 90% of post-compute/non-inference-time AI safety work (at least in OSS) uses Python environments, and Python ML libraries & tooling are popular with good maintenance.
 
+#### Why not just put Safety Eval code in a docker container and call it a day?
+- Lack of standardization in an international context means more diverse code bases, versioning nightmares, larger bug surface, and inconsistent results & interpretation.
+- Templates allow more steamlined development flow, security hardening, restricting potentially unsafe code, syncing on datasets, version-controlled dependencies, and a common environment for easier, better runtime consistency.
+- We can enhance multilateral trust by omitting centalized control or sovereignty.
+- Docker is not security-hardened enough to realiably contain the code it runs. If the safety work is to be used multilaterally, trusted security is essential.
+- Needs to encompass generic AI Assemblies (models/systems/frameworks) while allowing private access to Intellectual Property, directly (not via API) for verifiablility (APIs often use routing, safewalling and safeguards, and allow user targeting, which obscures true safety levels).
+
 ## Proposed agenda:
 - Agree on the technical base (env/langs/tools/etc)
 - Gather open-source eval/bench/auto-red-teaming
