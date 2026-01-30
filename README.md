@@ -1,7 +1,7 @@
 # AISafetyTemplate
 
-Welcome to the Hackathon repo.
-It'll serve to coordinate development and organize our findings.
+Welcome to the Hackathon repo!
+It will serve to coordinate development and organize our findings.
 
 ## Goal
 To develop a working prototype for standardized software template(s) for AI Safety Evals, Benches and/or Automated Red-Teaming.
@@ -10,7 +10,7 @@ To develop a working prototype for standardized software template(s) for AI Safe
 ## Purpose:
 To make post-compute AI safety work more collaborative & standardized.
 
-## Deliveralbe:
+## Deliverable:
 A verifiable software template(s) for post-compute, non-inference-time AI safety work, containerized and ready to be run inside a Trusted Execution Environment.
 Something along the lines of:
 ![template idea](https://github.com/davidg-apart/AISafetyTemplate/blob/aca0e653e092e36f35b6aed5b0e22478a2f53acc/template-idea.png)
