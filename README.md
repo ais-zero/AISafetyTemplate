@@ -29,5 +29,6 @@ Good question?! Python is a low-entry, dynamically-typed scripting language with
 - Divide them in to work packages, work in parallel
 - Sync, review, refactor
 - Integrate in to a unified template
+- Test with real or mocked UserComponent eval/bench/auto-red-teaming
 - Cycle back as needed
-- Write up Hackathon report
+- Write up [Hackathon report](https://docs.google.com/document/d/1Nu8GhsgtLPiT25-3ijmp4UCQGgly3n2l5K2EqN5gE90/edit?usp=sharing)
