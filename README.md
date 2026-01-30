@@ -5,7 +5,7 @@ It will serve to coordinate development and organize our findings.
 
 ## Goal
 To develop a working prototype for standardized software template(s) for AI Safety Evals, Benches and/or Automated Red-Teaming.
-![alt text](https://github.com/davidg-apart/AISafetyTemplate/blob/aca0e653e092e36f35b6aed5b0e22478a2f53acc/flow-hackathon.png)
+![What we are doing in this sprint in the context of the overall initiative](https://github.com/davidg-apart/AISafetyTemplate/blob/1e45d683df7e2a1684b7858915241301f13182f1/flow-hackathon.png)
 
 ## Purpose:
 Primarily, to make post-compute AI safety work more collaborative with verifiable standards. Second, to serve as strong boilerplate or SDK to streamline safety work. Additionally, to help secure such safety work by giving it a more hardened environment, and... with collaborative work also comes adversarial work.
