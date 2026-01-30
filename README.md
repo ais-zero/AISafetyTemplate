@@ -29,19 +29,19 @@ Good question?! Python is a low-entry, dynamically-typed scripting language with
 #### Why not just put Safety Eval code in a docker container and call it a day?
 Docker is great for packaging software so it runs the same way everywhere. But international safety evaluation needs more than “it runs.” It needs results that are comparable, reproducible, and trusted across organizations and governments. Containers alone don’t provide those guarantees.
 
-    Standardization
+☑ Standardization
     Different eval frameworks use slightly different task definitions, metrics, and formats. Docker packages them, but it doesn’t make their results consistent or comparable.
 
-    Reproducibility
+☑ Reproducibility
     We need shared templates, fixed datasets, versioned benchmarks, and controlled execution rules. Docker freezes dependencies, but it doesn’t enforce these constraints.
 
-    Trust & governance
+☑ Trust & governance
     Participants can’t rely on opaque, centrally built images. The system must be transparent, auditable, and neutral so everyone can verify what’s being run.
     
-    Security
+☑ Security
     Containers share the host kernel and aren’t strong isolation boundaries. Evaluating untrusted or risky workloads may require stronger sandboxing.
     
-    Verifiability
+☑ Verifiability
     API-only access can hide behavior behind routing or safeguards. Safety evaluation often requires running directly on the actual models and systems.
  
 ## Who benefits?
