@@ -19,6 +19,9 @@ The Controller serves as the only external dependancy for the UserComponent. It 
 Using C/Rust for it adds security, performance & precision, referenced from the UserComponent (a Python package) as a dll/binary.
 For this sprint, the AI Assembly (model/system/framework) will be mocked and there will be no blockchain or TEE components. None of this is set in stone, let's discuss.
 
+#### Why target Python Environments?
+Good question?! Python is a low-entry, dynamically-typed scripting language with an often wild, lesser-maintained ecosystem. We *should* be using a formal, compiled language like Rust or Haskell. The reality is 90% of post-compute/non-inference-time AI safety work (at least in OSS) uses Python environments, and Python ML libraries & tooling are popular with good maintenance.
+
 ## Proposed agenda:
 - Agree on the technical base (env/langs/tools/etc)
 - Gather open-source eval/bench/auto-red-teaming
