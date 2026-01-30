@@ -27,12 +27,23 @@ For this sprint, the AI Assembly (model/system/framework) will be mocked and the
 Good question?! Python is a low-entry, dynamically-typed scripting language with an often wild, lesser-maintained ecosystem. We *should* be using a formal, compiled language like Rust or Haskell. The reality is 90% of post-compute/non-inference-time AI safety work (at least in OSS) uses Python environments, and Python ML libraries & tooling are popular with good maintenance.
 
 #### Why not just put Safety Eval code in a docker container and call it a day?
-- Lack of standardization in an international context means more diverse code bases, versioning nightmares, larger bug surface, and inconsistent results & interpretation.
-- Templates allow more steamlined development flow, security hardening, restricting potentially unsafe code, syncing on datasets, version-controlled dependencies, and a common environment for easier, better runtime consistency.
-- We can enhance multilateral trust by omitting centalized control or sovereignty.
-- Docker is not security-hardened enough to realiably contain the code it runs. If the safety work is to be used multilaterally, trusted security is essential.
-- Needs to encompass generic AI Assemblies (models/systems/frameworks) while allowing private access to Intellectual Property, directly (not via API) for verifiablility (APIs often use routing, safewalling and safeguards, and allow user targeting, which obscures true safety levels).
+Docker is great for packaging software so it runs the same way everywhere. But international safety evaluation needs more than “it runs.” It needs results that are comparable, reproducible, and trusted across organizations and governments. Containers alone don’t provide those guarantees.
 
+    Standardization
+    Different eval frameworks use slightly different task definitions, metrics, and formats. Docker packages them, but it doesn’t make their results consistent or comparable.
+
+    Reproducibility
+    We need shared templates, fixed datasets, versioned benchmarks, and controlled execution rules. Docker freezes dependencies, but it doesn’t enforce these constraints.
+
+    Trust & governance
+    Participants can’t rely on opaque, centrally built images. The system must be transparent, auditable, and neutral so everyone can verify what’s being run.
+    
+    Security
+    Containers share the host kernel and aren’t strong isolation boundaries. Evaluating untrusted or risky workloads may require stronger sandboxing.
+    
+    Verifiability
+    API-only access can hide behavior behind routing or safeguards. Safety evaluation often requires running directly on the actual models and systems.
+ 
 ## Who benefits?
 
 This is an open-source, non-profit initiative. The streamlined development flow benefits new AI safety researchers and groups, while making the product of their research go further as it can be used more broadly.
