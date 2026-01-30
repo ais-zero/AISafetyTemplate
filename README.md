@@ -10,6 +10,8 @@ To develop a working prototype for standardized software template(s) for AI Safe
 ## Purpose:
 Primarily, to make post-compute AI safety work more collaborative with verifiable standards. Second, to serve as strong boilerplate or SDK to streamline safety work. Additionally, to help secure such safety work by giving it a more hardened environment, and... with collaborative work also comes adversarial work.
 
+This is targets a subset of AI safety work, those that apply to **foundational international AI safety** over, e.g., (supra-)national regulation or NatSec specific concerns. This means not all safety work is specifically relevant to this Template project.
+
 We are not creating the safety work itself rather the engineering to enable standardized collaboration internationally.
 Not to replace existing safety, governance, or policy initiatives but to united them with common infrastructure that is international, non-sovereign secure, verifiable, distributed, private where needed & transparent as can be. This is the greater conceptual mission, which will help orient you as we collaborate in this sprint.
 
