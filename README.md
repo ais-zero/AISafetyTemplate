@@ -33,13 +33,13 @@ Good question?! Python is a low-entry, dynamically-typed scripting language with
 - Docker is not security-hardened enough to realiably contain the code it runs. If the safety work is to be used multilaterally, trusted security is essential.
 - Needs to encompass generic AI Assemblies (models/systems/frameworks) while allowing private access to Intellectual Property, directly (not via API) for verifiablility (APIs often use routing, safewalling and safeguards, and allow user targeting, which obscures true safety levels).
 
-## Who benefits from this sprint project?
-This is not a commercial product and is apart of an open, non-profit initiative. Neither is it likely to be helpful to existing independent, more nationally-scoped AI safety eval work with proprietary solutions. That isn't it's point.
-The streamlined development flow benefits new AI safety researchers and groups more, while making the product of their research go further as it can be used more broadly.
+## Who benefits?
 
-Smaller AI labs benefit from not having to find secure, privacy-respecting solutions for giving access to IP to 3rd-party safety eval orgs. While 3rd-party safety eval orgs benefit from verifiable, trusted direct access to the AI Assembly. Top AI labs are highly likely to be content with their own solutions, so this does not apply at this stage (the sprint scope).
+This is an open-source, non-profit initiative. The streamlined development flow benefits new AI safety researchers and groups, while making the product of their research go further as it can be used more broadly.
 
-To understand it's greater benefit, it must be seen in the higher-level context - to enable verifiable, standardized AI safety collaboration globally - while providing a open, trusted solution for tooling and infrastructure.
+Smaller AI labs benefit from secure, privacy-respecting solutions for giving access to IP to 3rd-party safety eval orgs. While 3rd-party safety eval orgs benefit from verifiable, trusted direct access to the AI Assembly. The sprint scope focuses on serving these groups where the value is most immediate.
+
+To understand its greater benefit, it must be seen in the higher-level context: to enable verifiable, standardized AI safety collaboration globally while providing an open, trusted solution for tooling and infrastructure
 
 ## Proposed agenda:
 - Agree on the technical base (env/langs/tools/etc)
