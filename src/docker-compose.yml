@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  llm-proxy:
+    build:
+      context: .
+      dockerfile: llm_proxy/Dockerfile
+    container_name: llm-proxy
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - ai-safety-network
+
+  user-component:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: user-component
+    environment:
+      - LLM_PROXY_URL=http://llm-proxy:8000
+      - OUTPUT_PATH=/tmp/results/evaluation_output.json
+    volumes:
+      - ./results:/tmp/results
+    depends_on:
+      llm-proxy:
+        condition: service_healthy
+    networks:
+      - ai-safety-network
+
+networks:
+  ai-safety-network:
+    driver: bridge

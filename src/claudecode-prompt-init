@@ -1,0 +1,8 @@
+"The current implementation is incorrect - it's pure Python when it should be C++/Cython DLL. Read the correction instructions in CLAUDE_CODE_CORRECTIONS.md AND the original specs in /old specs/ directory. The architecture requires:
+
+C++ Controller compiled to controller.so
+UserComponent that ONLY imports the Controller DLL
+Controller manages ALL dependencies (HELM, datasets, security)
+Clean separation between Controller source and UserComponent
+
+Follow the correction instructions exactly - the DLL architecture is critical!"
