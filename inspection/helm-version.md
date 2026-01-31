@@ -15,4 +15,4 @@ Release Date: 01/27/2026
 
 ## Scope:
 - Intended Scenarios: HarmBench, AirBench
-- Intended Model adapter: 
+- Intended Model adapter: vLLM
