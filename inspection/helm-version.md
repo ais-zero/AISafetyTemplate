@@ -14,5 +14,5 @@ Release Date: 01/27/2026
 - Dependencies: 
 
 ## Scope:
-- Intended Scenarios: 
+- Intended Scenarios: HarmBench, AirBench
 - Intended Model adapter: 
