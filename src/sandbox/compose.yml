@@ -1,0 +1,41 @@
+services:
+  eval_sandbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      additional_contexts:
+        user_eval: ../user_components/example_eval
+    depends_on:
+      llm_proxy:
+        condition: service_healthy
+    networks:
+      - sandbox_internal
+    volumes:
+      - eval_output:/app/benchmark_output
+    environment:
+      OPENAI_API_KEY: "dummy"
+
+  llm_proxy:
+    image: ghcr.io/berriai/litellm:main-latest
+    command: >
+      --config /app/config/lite_llm_config.yml --port 4000 --host 0.0.0.0
+    volumes:
+      - ./lite_llm_config.yml:/app/config/lite_llm_config.yml:ro
+    env_file:
+      - ../../.env
+    expose:
+      - "4000"
+    ports:
+      - "4000:4000"
+    networks:
+      - sandbox_internal
+      - proxy_external
+
+networks:
+  sandbox_internal:
+    internal: true
+  proxy_external:
+    internal: false
+
+volumes:
+  eval_output:

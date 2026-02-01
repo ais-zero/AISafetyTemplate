@@ -1,0 +1,6 @@
+model_list:
+  - model_name: smollm3-3b
+    litellm_params:
+      model: huggingface/HuggingFaceTB/SmolLM3-3B:hf-inference
+      api_base: https://router.huggingface.co/v1
+      api_key: "os.environ/LLM_API_KEY"
