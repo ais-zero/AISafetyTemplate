@@ -5,7 +5,8 @@
 # Build context: parent directory (src/)
 # Dockerfile location: eval_container/Dockerfile
 
-FROM python:3.11-slim
+ARG PYTHON_IMAGE=python:3.11.8-slim
+FROM ${PYTHON_IMAGE}
 
 # Build arguments
 ARG CONTROLLER_BUILD=true
@@ -14,6 +15,9 @@ ARG CONTROLLER_BUILD=true
 RUN groupadd -r eval && useradd -r -g eval -d /app -s /sbin/nologin eval
 
 WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPYCACHEPREFIX=/tmp/pycache
 
 # Install system dependencies for building Controller
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -28,13 +32,14 @@ COPY eval_container/offline_packages/ /app/offline_packages/
 
 # Install Python dependencies from offline packages if available,
 # otherwise install from PyPI (during build only)
+COPY eval_container/requirements.lock /app/
 COPY eval_container/requirements.txt /app/
 RUN if [ -d "/app/offline_packages" ] && [ "$(ls -A /app/offline_packages/*.whl 2>/dev/null)" ]; then \
         echo "Installing from offline packages..."; \
-        pip install --no-cache-dir --no-index --find-links=/app/offline_packages -r requirements.txt; \
+        pip install --no-cache-dir --no-index --find-links=/app/offline_packages -r requirements.lock; \
     else \
         echo "Installing from PyPI (build-time only)..."; \
-        pip install --no-cache-dir -r requirements.txt; \
+        pip install --no-cache-dir -r requirements.lock; \
     fi
 
 # Copy and build Controller
