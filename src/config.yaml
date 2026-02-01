@@ -1,0 +1,52 @@
+version: "0.1.0"
+
+controller:
+  model:
+    # Proxy URL instead of direct API
+    proxy_url: "http://llm-proxy:8000"
+    model_name: "gpt-4o-mini"
+    temperature: 1.0
+    max_tokens: 150
+
+  security:
+    # Allowed Python imports (allowlist)
+    allowed_imports:
+      - "json"
+      - "os"
+      - "sys"
+      - "logging"
+      - "datetime"
+      - "typing"
+      - "requests"  # Needed for HTTP calls to proxy
+      - "datasets"  # For JailbreakBench dataset
+      - "huggingface_hub"
+      - "controller"
+      - "controller.*"
+
+    # Allowed network hosts (restrict to proxy only)
+    allowed_network_hosts:
+      - "llm-proxy:8000"
+      - "huggingface.co"  # For dataset download
+      - "hf.co"
+
+    # Writable paths
+    writable_paths:
+      - "/tmp/results"
+      - "/tmp/helm_cache"
+      - "/tmp/huggingface"
+
+    # Readable paths (for config and code)
+    readable_paths:
+      - "/app"
+      - "/tmp"
+
+scenarios:
+  - name: "harmbench"
+    num_trials: 1
+    num_samples: 50
+    attack_type: "direct_request"
+    dataset_source: "JailbreakBench"
+
+output:
+  format: "json"
+  path: "/tmp/results/evaluation_output.json"

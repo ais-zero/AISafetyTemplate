@@ -1,0 +1,9 @@
+# Offline Python Packages
+#
+# This directory contains pre-downloaded Python wheel files for air-gapped installation.
+#
+# To populate this directory:
+# 1. Run ./download_offline_packages.sh on a machine with internet access
+# 2. Copy the resulting .whl files here
+#
+# The Dockerfile will use these packages instead of downloading from PyPI.

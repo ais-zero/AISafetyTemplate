@@ -1,0 +1,23 @@
+# Offline Datasets Directory
+#
+# This directory contains pre-downloaded datasets for air-gapped installation.
+# The eval container has no internet access, so all datasets must be pre-downloaded.
+#
+# Directory structure:
+#   offline_datasets/
+#     JailbreakBench/
+#       JBB-Behaviors/
+#         behaviors.jsonl
+#     custom/
+#       my_dataset.jsonl
+#
+# To populate this directory:
+# 1. Run ./download_datasets.sh on a machine with internet access
+# 2. Copy the resulting dataset folders here
+#
+# Supported formats:
+# - JSONL (JSON Lines) - one JSON object per line
+# - JSON - single JSON array
+# - Parquet files (from HuggingFace datasets)
+#
+# The DatasetManager will automatically detect and load these formats.
