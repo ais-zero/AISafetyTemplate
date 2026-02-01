@@ -1,4 +1,4 @@
-# AI Evaluation Benchmarks
+# AI Benchmark Datasets
 
 A collection of benchmark datasets for evaluating large language models across safety and capability dimensions.
 
