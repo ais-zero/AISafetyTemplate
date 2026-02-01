@@ -39,7 +39,7 @@ class Controller:
             # Development build location
             os.path.join(os.path.dirname(__file__), '../../build/controller.so'),
             # Installed location (Docker)
-            '/opt/controller/controller.so',
+            '/opt/controller/libcontroller.so',
             # Current directory
             './controller.so',
             # Build directory

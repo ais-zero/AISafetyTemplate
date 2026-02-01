@@ -24,7 +24,7 @@ RUN cd /build/controller && \
 
 # Install Controller DLL and Python wrapper
 RUN mkdir -p /opt/controller && \
-    cp /build/controller/build/controller.so /opt/controller/ && \
+    cp /build/controller/build/controller.so /opt/controller/libcontroller.so && \
     cp /build/controller/python/controller.py /opt/controller/ && \
     echo "Controller installed to /opt/controller"
 

@@ -5,6 +5,15 @@
 #include <string>
 #include <cstring>
 
+// GIL Guard for thread safety
+class GILGuard {
+public:
+    GILGuard() { gstate = PyGILState_Ensure(); }
+    ~GILGuard() { PyGILState_Release(gstate); }
+private:
+    PyGILState_STATE gstate;
+};
+
 // Global state
 static std::string g_proxy_url;
 static std::string g_config_path;
@@ -20,6 +29,7 @@ static void set_error(const std::string& error) {
 extern "C" {
 
 int controller_init(const char* config_path) {
+    GILGuard gil_guard;
     try {
         if (g_initialized) {
             set_error("Controller already initialized");
@@ -64,6 +74,7 @@ int controller_init(const char* config_path) {
 }
 
 void* controller_get_proxy_client() {
+    GILGuard gil_guard;
     if (!g_initialized) {
         set_error("Controller not initialized");
         return nullptr;
@@ -164,6 +175,7 @@ const char* controller_load_dataset(const char* name) {
 }
 
 void* controller_run_helm_scenario(const char* scenario_name, void* config) {
+    GILGuard gil_guard;
     if (!g_initialized) {
         set_error("Controller not initialized");
         return nullptr;
@@ -230,7 +242,7 @@ void install_import_hooks() {
     std::cout << "[Controller] Installing import hooks..." << std::endl;
 
     // Install Python import hook to enforce allowlist
-    const char* hook_code = R"(
+    const char* hook_code = R"HOOK(
 import sys
 import importlib.abc
 import importlib.machinery
@@ -271,7 +283,7 @@ class ImportRestriction(importlib.abc.MetaPathFinder):
 # Install the hook
 # sys.meta_path.insert(0, ImportRestriction())
 print("[Controller] Import hooks installed (permissive mode for sprint)")
-)";
+)HOOK";
 
     PyRun_SimpleString(hook_code);
 }
