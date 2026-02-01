@@ -30,7 +30,10 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Configuration
-HUGGINGFACE_API_BASE = "https://router.huggingface.co/hf-inference/v1"
+HUGGINGFACE_API_BASE = os.environ.get(
+    "HF_API_BASE",
+    "https://router.huggingface.co/v1",
+)
 HF_API_KEY = os.environ.get('HF_API_KEY', os.environ.get('LLM_API_KEY', ''))
 
 # Rate limiting
