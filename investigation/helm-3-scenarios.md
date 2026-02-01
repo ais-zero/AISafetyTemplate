@@ -51,13 +51,13 @@ HarmBench already covers: harmful compliance, unsafe instructions, jailbreak beh
 
 ---
 
-## How This Feeds Tasks #3, #4, #14
+## How it _Feeds_  T#3, T#4, T#14
 
 | Task | What It Uses | Why |
 |------|--------------|-----|
-| Task 3 — Dependencies | MMLU, GSM8K, NaturalQuestions | As an external benchmarks → need to track as dependencies |
-| Task 4 — Datasets | HarmBench + the 3 above | Define which datasets to acquire/prepare |
-| Task 14 — Standardized Results | All metrics normalize to % | Accuracy, EM, refusal rates all become percentages → consistent dashboarding |
+| Task 3:  Dependencies | MMLU, GSM8K, NaturalQuestions | As an external benchmarks → need to track as dependencies |
+| Task 4: Datasets | HarmBench + the 3 above | Define which datasets to acquire/prepare |
+| Task 14:  Standardized Results | All metrics normalize to % | Accuracy, EM, refusal rates all become percentages → consistent dashboarding |
 
 ---
 
