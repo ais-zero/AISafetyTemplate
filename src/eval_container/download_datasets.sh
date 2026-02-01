@@ -100,15 +100,11 @@ output_dir = "${output_dir}"
 print(f"Loading dataset: {dataset_name}")
 
 try:
-    # Try to load the dataset (some datasets require a config name)
-    try:
+    # JBB-Behaviors requires specifying the 'behaviors' config
+    if "JBB-Behaviors" in dataset_name:
+        dataset = load_dataset(dataset_name, "behaviors")
+    else:
         dataset = load_dataset(dataset_name)
-    except ValueError as ve:
-        if "Config name is missing" in str(ve):
-            print(f"Dataset requires config selection, trying 'behaviors' config...")
-            dataset = load_dataset(dataset_name, "behaviors")
-        else:
-            raise
 
     # Get all splits
     splits = list(dataset.keys())
