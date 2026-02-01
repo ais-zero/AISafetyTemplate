@@ -2,10 +2,10 @@
 # These should be pre-downloaded to offline_packages/ for air-gapped installation
 
 # HTTP client for proxy communication
-requests==2.31.0
+requests>=2.32.2
 
 # HELM framework
-crfm-helm==0.5.0
+crfm-helm==0.5.12
 
 # Data handling
 numpy>=1.24.0
@@ -21,7 +21,7 @@ sentencepiece>=0.1.99
 
 # YAML/JSON config handling
 pyyaml>=6.0
-cattrs>=23.1.0
+cattrs~=22.2
 attrs>=23.1.0
 
 # Progress bars
