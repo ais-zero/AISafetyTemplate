@@ -525,6 +525,109 @@ print("[Controller] Import hooks installed")
     PyRun_SimpleString(hook_code);
 }
 
+void* controller_load_local_dataset(const char* dataset_path) {
+    if (!g_initialized) {
+        set_error("Controller not initialized");
+        return nullptr;
+    }
+
+    try {
+        std::cout << "[Controller] Loading local dataset from: " << dataset_path << std::endl;
+
+        // Create Python code to load dataset files
+        PyObject* globals = PyDict_New();
+        PyDict_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
+        PyDict_SetItemString(globals, "dataset_path", PyUnicode_FromString(dataset_path));
+
+        const char* load_code = R"(
+import os
+import json
+
+def load_local_dataset(path):
+    """
+    Load dataset from local offline storage.
+
+    Supports:
+    - JSONL (JSON Lines) - one JSON object per line
+    - JSON - array of objects
+
+    Returns:
+        List of dataset records, or empty list if not found
+    """
+    # Check for data files in order of preference
+    data_files = [
+        "data.jsonl",
+        "behaviors.jsonl",
+        "train.jsonl",
+        "test.jsonl",
+        "data.json",
+        "behaviors.json"
+    ]
+
+    data_file = None
+
+    # If path is a file, use it directly
+    if os.path.isfile(path):
+        data_file = path
+    else:
+        # Search for data files in directory
+        for filename in data_files:
+            full_path = os.path.join(path, filename)
+            if os.path.exists(full_path):
+                data_file = full_path
+                break
+
+    if not data_file:
+        print(f"[Controller] No data file found in {path}")
+        print("[Controller] Run download_datasets.sh before building the container")
+        return []
+
+    print(f"[Controller] Loading from: {data_file}")
+
+    try:
+        if data_file.endswith('.jsonl'):
+            records = []
+            with open(data_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        records.append(json.loads(line))
+            print(f"[Controller] Loaded {len(records)} records")
+            return records
+        else:
+            with open(data_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    print(f"[Controller] Loaded {len(data)} records")
+                    return data
+                else:
+                    return [data]
+    except Exception as e:
+        print(f"[Controller] Error loading dataset: {e}")
+        return []
+
+result = load_local_dataset(dataset_path)
+)";
+
+        PyRun_String(load_code, Py_file_input, globals, globals);
+        PyObject* result = PyDict_GetItemString(globals, "result");
+
+        if (!result) {
+            set_error("Failed to load dataset");
+            Py_DECREF(globals);
+            return nullptr;
+        }
+
+        Py_INCREF(result);
+        Py_DECREF(globals);
+        return (void*)result;
+
+    } catch (const std::exception& e) {
+        set_error(std::string("load_local_dataset failed: ") + e.what());
+        return nullptr;
+    }
+}
+
 void controller_shutdown() {
     if (!g_initialized) {
         return;

@@ -37,10 +37,33 @@ For air-gapped environments, dependencies must be pre-downloaded:
 ```bash
 # On a machine with internet access:
 cd eval_container
+
+# Download Python packages
 ./download_offline_packages.sh
 
-# Copy offline_packages/ to target build environment
+# Download datasets (required for evaluations)
+./download_datasets.sh
+
+# Copy offline_packages/ and offline_datasets/ to target build environment
 ```
+
+### Offline Datasets
+Since the eval container has NO internet access, all datasets must be pre-downloaded:
+
+```bash
+# Download default datasets (JailbreakBench, etc.)
+./download_datasets.sh
+
+# Download specific dataset
+./download_datasets.sh owner/dataset-name
+```
+
+Downloaded datasets are stored in `offline_datasets/` and copied to `/app/offline_datasets/` in the container.
+
+**Supported formats:**
+- JSONL (JSON Lines) - one JSON object per line
+- JSON - array of objects
+- Parquet files (from HuggingFace)
 
 ### Allowed Python Modules
 The Controller enforces an import allowlist. See `security.cpp` for the full list.

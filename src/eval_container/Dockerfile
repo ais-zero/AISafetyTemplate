@@ -52,6 +52,10 @@ RUN cp /app/controller/python/controller.py /app/
 # Copy HELM configuration
 COPY helm_config/ /app/helm_config/
 
+# Copy offline datasets (pre-downloaded for air-gapped installation)
+# Run download_datasets.sh before building to populate this directory
+COPY eval_container/offline_datasets/ /app/offline_datasets/
+
 # Copy user evaluation component (will be mounted at runtime, but include default)
 COPY user_component/boilerplate/ /app/eval/
 

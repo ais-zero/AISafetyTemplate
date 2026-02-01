@@ -82,9 +82,11 @@ static const std::set<std::string> ALLOWED_IMPORTS = {
     "charset_normalizer",
     "idna",
 
-    // Dataset loading
+    // Dataset/file loading (local files only - no internet access)
+    // Note: Network downloads will fail due to container isolation
     "datasets",
     "huggingface_hub",
+    "pyarrow",
 
     // HELM framework modules
     "helm",
@@ -99,7 +101,6 @@ static const std::set<std::string> ALLOWED_IMPORTS = {
     "tqdm",
     "filelock",
     "fsspec",
-    "pyarrow",
     "multiprocess",
     "dill",
     "xxhash",
@@ -120,13 +121,47 @@ static const std::set<std::string> ALLOWED_IMPORTS = {
 };
 
 // Blocked modules (security-sensitive)
+// These modules are blocked to prevent:
+// - Command execution (subprocess)
+// - Raw network access (socket, etc.)
+// - External connections (paramiko, fabric)
+// Note: The container has no internet access anyway (network isolation),
+// but these blocks provide defense in depth.
 static const std::set<std::string> BLOCKED_IMPORTS = {
+    // Command execution
     "subprocess",
+    "pty",
+    "commands",
+    "popen2",
+
+    // Raw network access
     "socket",
+    "socketserver",
+    "ssl",
+    "smtplib",
+    "smtpd",
+    "poplib",
+    "imaplib",
+    "nntplib",
     "ftplib",
     "telnetlib",
+
+    // SSH/Remote access
     "paramiko",
     "fabric",
+    "pexpect",
+
+    // System-level access
+    "ctypes",
+    "cffi",
+    "resource",
+    "signal",
+
+    // Code execution
+    "code",
+    "codeop",
+    "compile",
+    "exec",
 };
 
 bool is_import_allowed(const std::string& module_name) {

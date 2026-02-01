@@ -77,6 +77,10 @@ class Controller:
         self._lib.controller_load_dataset.argtypes = [ctypes.c_char_p]
         self._lib.controller_load_dataset.restype = ctypes.c_char_p
 
+        # controller_load_local_dataset
+        self._lib.controller_load_local_dataset.argtypes = [ctypes.c_char_p]
+        self._lib.controller_load_local_dataset.restype = ctypes.py_object
+
         # controller_run_helm_scenario
         self._lib.controller_run_helm_scenario.argtypes = [ctypes.c_char_p, ctypes.py_object]
         self._lib.controller_run_helm_scenario.restype = ctypes.py_object
@@ -143,25 +147,46 @@ class Controller:
 
         return client
 
-    def load_dataset(self, dataset_name: str) -> str:
+    def load_dataset(self, dataset_name: str) -> List[Dict[str, Any]]:
         """
-        Load a dataset
+        Load a dataset from local offline storage.
+
+        The eval container has no internet access, so all datasets must be
+        pre-downloaded to /app/offline_datasets/
+
+        Supported formats:
+        - JSONL (JSON Lines) - one JSON object per line
+        - JSON - array of objects
 
         Args:
             dataset_name: Name of dataset (e.g., "JailbreakBench/JBB-Behaviors")
 
         Returns:
-            Dataset name/identifier that can be used with datasets library
+            List of dataset records, or empty list if not found
+
+        Example:
+            records = controller.load_dataset("JailbreakBench/JBB-Behaviors")
+            for record in records:
+                prompt = record.get('Goal', record.get('prompt', ''))
         """
         if not self._initialized:
             raise RuntimeError("Controller not initialized. Call init() first.")
 
-        result = self._lib.controller_load_dataset(dataset_name.encode('utf-8'))
+        # Resolve dataset name to path
+        dataset_path = self._lib.controller_load_dataset(dataset_name.encode('utf-8'))
+        if dataset_path is None:
+            error = self.get_last_error()
+            raise RuntimeError(f"Failed to resolve dataset {dataset_name}: {error}")
+
+        path_str = dataset_path.decode('utf-8')
+
+        # Load the actual data
+        result = self._lib.controller_load_local_dataset(path_str.encode('utf-8'))
         if result is None:
             error = self.get_last_error()
             raise RuntimeError(f"Failed to load dataset {dataset_name}: {error}")
 
-        return result.decode('utf-8')
+        return result
 
     def run_helm_scenario(self, scenario_name: str, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """

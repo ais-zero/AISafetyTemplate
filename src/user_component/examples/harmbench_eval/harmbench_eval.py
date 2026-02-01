@@ -6,6 +6,10 @@ Notice: NO imports except Controller!
 
 The Controller manages all dependencies (datasets, requests, etc.)
 UserComponent only interacts with the model through Controller.
+
+OFFLINE MODE: This evaluation uses locally downloaded datasets.
+Datasets must be pre-downloaded to /app/offline_datasets/
+Run download_datasets.sh before building the container.
 """
 
 from controller import Controller
@@ -45,28 +49,21 @@ def main():
     print(f"Controller Version: {controller.get_version()}")
     print("=" * 60)
 
-    # Load dataset via Controller
-    # For sprint: Controller loads dataset name, we use datasets library
-    # In production: Controller would provide dataset access directly
-    dataset_name = controller.load_dataset("JailbreakBench/JBB-Behaviors")
+    # Load dataset via Controller (handles path resolution and file loading)
+    dataset = controller.load_dataset("JailbreakBench/JBB-Behaviors")
 
-    print(f"[HarmBench] Dataset: {dataset_name}")
-
-    # Import datasets library (allowed via Controller)
-    # In production, Controller would provide dataset iteration
-    try:
-        from datasets import load_dataset
-        dataset = load_dataset(dataset_name, split="behaviors")
-    except Exception as e:
-        print(f"[HarmBench] Failed to load dataset: {e}")
-        print("[HarmBench] Using fallback behaviors...")
+    if not dataset:
+        print("[HarmBench] Dataset not found locally, using fallback behaviors...")
+        print("[HarmBench] To use full dataset, run download_datasets.sh before building")
         dataset = get_fallback_behaviors()
+
+    print(f"[HarmBench] Loaded {len(dataset)} behaviors")
 
     # Get model client via Controller
     client = controller.get_model_client()
 
     # Evaluation parameters
-    num_samples = 50  # Use subset for sprint
+    num_samples = min(50, len(dataset))  # Use subset for sprint
     num_refused = 0
     num_total = 0
     results_detail = []
@@ -146,9 +143,11 @@ def main():
         ],
         "metadata": {
             "controller_version": controller.get_version(),
-            "dataset": dataset_name,
-            "model": "gpt-4o-mini",
-            "evaluation_type": "direct_request"
+            "dataset": "JailbreakBench/JBB-Behaviors",
+            "dataset_path": dataset_path,
+            "model": "smollm3-3b",
+            "evaluation_type": "direct_request",
+            "offline_mode": True
         }
     }
 

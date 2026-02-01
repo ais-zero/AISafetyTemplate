@@ -15,6 +15,11 @@ void* controller_get_proxy_client();
 // Dataset access
 const char* controller_load_dataset(const char* name);
 
+// Load local dataset from offline storage (returns PyObject* list)
+// Supports JSONL and JSON formats
+// Returns: PyObject* containing list of records, or NULL on error
+void* controller_load_local_dataset(const char* dataset_path);
+
 // HELM Integration
 // Run a HELM scenario with optional configuration
 // Returns: PyObject* containing results dict, or NULL on error
