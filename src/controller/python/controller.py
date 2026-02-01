@@ -23,7 +23,7 @@ class Controller:
         lib_path = self._find_library()
 
         try:
-            self._lib = ctypes.CDLL(lib_path)
+            self._lib = ctypes.PyDLL(lib_path)
             self._setup_signatures()
             self._initialized = False
         except OSError as e:
@@ -36,12 +36,16 @@ class Controller:
         """Find the controller.so library"""
         # Try multiple locations
         locations = [
+            # Docker installed location (renamed to avoid Python import collision)
+            '/app/libcontroller.so',
             # Development build location
             os.path.join(os.path.dirname(__file__), '../../build/controller.so'),
             # Installed location (Docker)
+            '/opt/controller/libcontroller.so',
             '/opt/controller/controller.so',
             # Current directory
             './controller.so',
+            './libcontroller.so',
             # Build directory
             '../build/controller.so',
         ]

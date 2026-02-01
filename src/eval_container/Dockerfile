@@ -44,7 +44,7 @@ RUN cd /app/controller && \
     cd build && \
     cmake .. && \
     make -j$(nproc) && \
-    cp controller.so /app/
+    cp controller.so /app/libcontroller.so
 
 # Copy Controller Python module
 RUN cp /app/controller/python/controller.py /app/
@@ -71,7 +71,7 @@ RUN apt-get purge -y --auto-remove build-essential cmake && \
 # Security: Set proper permissions
 RUN chown -R eval:eval /app && \
     chmod 755 /app && \
-    chmod 555 /app/controller.so /app/controller.py
+    chmod 555 /app/libcontroller.so /app/controller.py
 
 # Create output directory with write permissions
 RUN mkdir -p /app/output /app/benchmark_output && \
