@@ -326,23 +326,115 @@ int controller_submit_results(const char* json_results) {
             std::string(output_path_env) :
             "/tmp/results/evaluation_output.json";
 
-        std::cout << "[Controller] Saving results to: " << output_path << std::endl;
+        std::cout << "[Controller] Processing and saving results to: " << output_path << std::endl;
 
-        // Create directory if it doesn't exist
-        std::string dir_path = output_path.substr(0, output_path.find_last_of("/"));
-        std::string mkdir_cmd = "mkdir -p " + dir_path;
-        system(mkdir_cmd.c_str());
+        // Process metrics through Python for normalization
+        PyObject* globals = PyDict_New();
+        PyDict_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
+        PyDict_SetItemString(globals, "raw_results", PyUnicode_FromString(json_results));
+        PyDict_SetItemString(globals, "output_path", PyUnicode_FromString(output_path.c_str()));
 
-        // Write results to file
-        std::ofstream file(output_path);
-        if (!file.is_open()) {
-            set_error("Failed to open output file: " + output_path);
+        // Metrics processing code - normalizes user component metrics to standard format
+        const char* process_code = R"(
+import json
+import os
+from datetime import datetime
+
+# Parse raw results
+try:
+    results = json.loads(raw_results)
+except json.JSONDecodeError:
+    results = {"raw": raw_results, "error": "Invalid JSON"}
+
+# Standard metric mapping - maps user component metrics to normalized names
+METRIC_MAPPINGS = {
+    # Safety metrics
+    "refusal_rate": "safety.refusal_rate",
+    "attack_success_rate": "safety.attack_success_rate",
+    "asr": "safety.attack_success_rate",
+    "jailbreak_rate": "safety.jailbreak_rate",
+    "harmful_completion_rate": "safety.harmful_completion_rate",
+
+    # Quality metrics
+    "exact_match": "quality.exact_match",
+    "f1_score": "quality.f1",
+    "accuracy": "quality.accuracy",
+    "bleu": "quality.bleu",
+    "rouge": "quality.rouge",
+
+    # Fairness metrics
+    "demographic_parity": "fairness.demographic_parity",
+    "equal_opportunity": "fairness.equal_opportunity",
+
+    # Performance metrics
+    "latency_p50": "performance.latency_p50_ms",
+    "latency_p99": "performance.latency_p99_ms",
+    "tokens_per_second": "performance.tokens_per_second",
+}
+
+def normalize_metrics(metrics_dict, prefix=""):
+    """Recursively normalize metric names"""
+    normalized = {}
+    for key, value in metrics_dict.items():
+        full_key = f"{prefix}.{key}" if prefix else key
+
+        if isinstance(value, dict):
+            normalized.update(normalize_metrics(value, full_key))
+        else:
+            # Map to standard name if available
+            mapped_key = METRIC_MAPPINGS.get(key, full_key)
+            normalized[mapped_key] = value
+
+    return normalized
+
+# Process scenarios and normalize metrics
+processed_results = {
+    "version": results.get("version", "1.0.0"),
+    "timestamp": datetime.utcnow().isoformat() + "Z",
+    "controller_version": "0.1.0-sprint",
+    "scenarios": [],
+    "normalized_metrics": {},
+    "metadata": results.get("metadata", {})
+}
+
+# Process each scenario
+for scenario in results.get("scenarios", []):
+    scenario_name = scenario.get("name", "unknown")
+    raw_metrics = scenario.get("metrics", {})
+
+    # Normalize metrics
+    normalized = normalize_metrics(raw_metrics, scenario_name)
+    processed_results["normalized_metrics"].update(normalized)
+
+    # Keep original scenario data
+    processed_results["scenarios"].append({
+        "name": scenario_name,
+        "raw_metrics": raw_metrics,
+        "normalized_metrics": {k: v for k, v in normalized.items() if k.startswith(scenario_name)}
+    })
+
+# Create output directory
+os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+# Write processed results
+with open(output_path, 'w') as f:
+    json.dump(processed_results, f, indent=2)
+
+print(f"[Controller] Processed {len(processed_results['scenarios'])} scenarios")
+print(f"[Controller] Normalized {len(processed_results['normalized_metrics'])} metrics")
+process_success = True
+)";
+
+        PyRun_String(process_code, Py_file_input, globals, globals);
+
+        PyObject* success = PyDict_GetItemString(globals, "process_success");
+        if (!success || !PyObject_IsTrue(success)) {
+            set_error("Metrics processing failed");
+            Py_DECREF(globals);
             return -1;
         }
 
-        file << json_results;
-        file.close();
-
+        Py_DECREF(globals);
         std::cout << "[Controller] Results saved successfully" << std::endl;
         return 0;
 
@@ -362,41 +454,72 @@ import importlib.abc
 import importlib.machinery
 
 class ImportRestriction(importlib.abc.MetaPathFinder):
-    """Import hook to enforce allowlist"""
+    """Import hook to enforce allowlist for security"""
 
     # Allowed imports (modules UserComponent can import)
     ALLOWED = {
-        'controller',
-        'json',
-        'typing',
-        'datetime',
-        'os',  # Limited functionality
-        'sys',  # Limited functionality
-        'logging',
-        're',
-        'math',
-        # Add more as needed for HELM
-        'numpy',
-        'pandas',
+        # Core Python
+        'controller', 'json', 'typing', 'datetime', 'os', 'sys',
+        'logging', 're', 'math', 'collections', 'functools',
+        'itertools', 'pathlib', 'importlib', 'abc', 'dataclasses',
+        'enum', 'copy', 'hashlib', 'base64', 'uuid', 'time',
+        'random', 'string', 'io', 'tempfile', 'csv', 'textwrap',
+        'traceback', 'warnings', 'threading', 'queue', 'concurrent',
+        'pickle', 'gzip', 'zipfile', 'shutil', 'glob', 'fnmatch',
+        'configparser', 'argparse',
+
+        # Data science
+        'numpy', 'pandas', 'scipy', 'sklearn',
+
+        # ML/AI
+        'torch', 'transformers', 'tokenizers', 'tiktoken', 'sentencepiece',
+        'safetensors',
+
+        # HTTP (for proxy)
+        'requests', 'urllib', 'urllib3', 'http', 'httpx', 'aiohttp',
+        'certifi', 'charset_normalizer', 'idna',
+
+        # Datasets
+        'datasets', 'huggingface_hub',
+
+        # HELM framework
+        'helm', 'crfm_helm', 'cattrs', 'attrs', 'dacite',
+        'pydantic', 'yaml', 'ruamel', 'toml', 'tqdm',
+        'filelock', 'fsspec', 'pyarrow', 'tenacity', 'nltk',
+        'openai', 'anthropic', 'cohere', 'google', 'vertexai',
+        'multiprocess', 'dill', 'xxhash', 'aiofiles',
+        'nest_asyncio', 'sqlitedict', 'retrying', 'spacy',
+    }
+
+    # Explicitly blocked (security-sensitive)
+    BLOCKED = {
+        'subprocess', 'socket', 'ftplib', 'telnetlib',
+        'paramiko', 'fabric', 'pexpect', 'pty',
+        'ctypes', 'cffi',
     }
 
     def find_spec(self, fullname, path, target=None):
+        base_module = fullname.split('.')[0]
+
+        # Block security-sensitive modules
+        if base_module in self.BLOCKED:
+            print(f"[Security] BLOCKED import: {fullname}")
+            raise ImportError(f"Module '{fullname}' is not allowed for security reasons")
+
         # Allow controller module always
         if fullname == 'controller' or fullname.startswith('controller.'):
-            return None  # Let normal import mechanism handle it
+            return None
 
-        # Check if module is in allowlist
-        base_module = fullname.split('.')[0]
+        # Check allowlist (permissive mode for HELM compatibility)
         if base_module not in self.ALLOWED:
-            # For now, we'll be permissive for sprint
-            # In production, this would raise ImportError
-            pass
+            # Log but allow for now (strict mode would raise ImportError)
+            print(f"[Security] Warning: Unlisted import: {fullname}")
 
         return None  # Let normal import mechanism handle it
 
 # Install the hook
-# sys.meta_path.insert(0, ImportRestriction())
-print("[Controller] Import hooks installed (permissive mode for sprint)")
+sys.meta_path.insert(0, ImportRestriction())
+print("[Controller] Import hooks installed")
 )";
 
     PyRun_SimpleString(hook_code);

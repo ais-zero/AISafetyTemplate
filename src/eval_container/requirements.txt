@@ -1,0 +1,32 @@
+# Core dependencies for eval container
+# These should be pre-downloaded to offline_packages/ for air-gapped installation
+
+# HTTP client for proxy communication
+requests==2.31.0
+
+# HELM framework
+crfm-helm==0.5.0
+
+# Data handling
+numpy>=1.24.0
+pandas>=2.0.0
+
+# HuggingFace datasets (for loading eval data)
+datasets>=2.14.0
+huggingface_hub>=0.19.0
+
+# Tokenization
+tiktoken>=0.5.0
+sentencepiece>=0.1.99
+
+# YAML/JSON config handling
+pyyaml>=6.0
+cattrs>=23.1.0
+attrs>=23.1.0
+
+# Progress bars
+tqdm>=4.66.0
+
+# Utilities
+filelock>=3.12.0
+tenacity>=8.2.0

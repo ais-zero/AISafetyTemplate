@@ -1,40 +1,145 @@
-version: '3.8'
+# AI Safety Evaluation Platform - Docker Compose
+# Two-container architecture with hardened network isolation
+#
+# Network Topology:
+# - eval_sandbox: NO internet access, only connects to llm_proxy
+# - llm_proxy: Only connects to HuggingFace API (external)
+#
+# Security:
+# - Containers run as non-root users
+# - Read-only filesystems where possible
+# - No privileged access
+# - Minimal capabilities
+# - Resource limits enforced
 
 services:
-  llm-proxy:
+  # ==========================================================================
+  # Eval Sandbox Container
+  # - Runs HELM evaluations and user components
+  # - NO internet access (internal network only)
+  # - Connects only to llm_proxy for model inference
+  # ==========================================================================
+  eval_sandbox:
     build:
       context: .
-      dockerfile: llm_proxy/Dockerfile
-    container_name: llm-proxy
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    ports:
-      - "8000:8000"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    networks:
-      - ai-safety-network
-
-  user-component:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: user-component
-    environment:
-      - LLM_PROXY_URL=http://llm-proxy:8000
-      - OUTPUT_PATH=/tmp/results/evaluation_output.json
-    volumes:
-      - ./results:/tmp/results
+      dockerfile: eval_container/Dockerfile
+    container_name: eval_sandbox
     depends_on:
-      llm-proxy:
+      llm_proxy:
         condition: service_healthy
     networks:
-      - ai-safety-network
+      - sandbox_internal
+    volumes:
+      # Output volume for evaluation results
+      - eval_output:/app/output
+      - benchmark_output:/app/benchmark_output
+      # Mount user component (read-only)
+      - ./user_component/boilerplate:/app/eval:ro
+      # Mount HELM config (read-only)
+      - ./helm_config:/app/helm_config:ro
+    environment:
+      - LLM_PROXY_URL=http://llm_proxy:8000
+      - OUTPUT_PATH=/app/output/evaluation_results.json
+      - PYTHONUNBUFFERED=1
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: false  # Need write for output
+    tmpfs:
+      - /tmp:size=100M,mode=1777
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    # No DNS access (can only reach llm_proxy by container name)
+    dns: []
 
+  # ==========================================================================
+  # LLM Proxy Container
+  # - Proxies requests to HuggingFace Inference API
+  # - Has external network access ONLY to HuggingFace
+  # - Accepts requests ONLY from internal network
+  # ==========================================================================
+  llm_proxy:
+    build:
+      context: ./llm_proxy
+      dockerfile: Dockerfile
+    container_name: llm_proxy
+    networks:
+      - sandbox_internal
+      - proxy_external
+    expose:
+      - "8000"
+    # Uncomment for debugging (removes network isolation)
+    # ports:
+    #   - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - HF_MODEL=HuggingFaceTB/SmolLM3-3B
+      - RATE_LIMIT=60
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:size=50M,mode=1777
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# ==========================================================================
+# Networks
+# ==========================================================================
 networks:
-  ai-safety-network:
+  # Internal network - NO internet access
+  # Only allows communication between eval_sandbox and llm_proxy
+  sandbox_internal:
     driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+  # External network - internet access for llm_proxy only
+  # Used to reach HuggingFace API
+  proxy_external:
+    driver: bridge
+    internal: false
+
+# ==========================================================================
+# Volumes
+# ==========================================================================
+volumes:
+  # Evaluation output - results from Controller
+  eval_output:
+    driver: local
+
+  # HELM benchmark output
+  benchmark_output:
+    driver: local
