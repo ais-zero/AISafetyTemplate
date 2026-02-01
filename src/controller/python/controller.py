@@ -81,10 +81,6 @@ class Controller:
         self._lib.controller_load_local_dataset.argtypes = [ctypes.c_char_p]
         self._lib.controller_load_local_dataset.restype = ctypes.py_object
 
-        # controller_run_helm_scenario
-        self._lib.controller_run_helm_scenario.argtypes = [ctypes.c_char_p, ctypes.py_object]
-        self._lib.controller_run_helm_scenario.restype = ctypes.py_object
-
         # controller_run_helm_benchmark
         self._lib.controller_run_helm_benchmark.argtypes = [
             ctypes.c_char_p,  # plugin_path
@@ -94,10 +90,6 @@ class Controller:
             ctypes.c_char_p   # output_path
         ]
         self._lib.controller_run_helm_benchmark.restype = ctypes.py_object
-
-        # controller_load_helm_scenario
-        self._lib.controller_load_helm_scenario.argtypes = [ctypes.c_char_p]
-        self._lib.controller_load_helm_scenario.restype = ctypes.c_int
 
         # controller_get_helm_results
         self._lib.controller_get_helm_results.argtypes = [ctypes.c_char_p]
@@ -188,33 +180,6 @@ class Controller:
 
         return result
 
-    def run_helm_scenario(self, scenario_name: str, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        Run a HELM scenario by name
-
-        Args:
-            scenario_name: Name of the HELM scenario (e.g., "mmlu", "truthfulqa")
-            config: Optional configuration dictionary
-
-        Returns:
-            Dictionary containing scenario results and metrics
-        """
-        if not self._initialized:
-            raise RuntimeError("Controller not initialized. Call init() first.")
-
-        print(f"[Controller] Running HELM scenario: {scenario_name}")
-
-        result = self._lib.controller_run_helm_scenario(
-            scenario_name.encode('utf-8'),
-            config
-        )
-
-        if result is None:
-            error = self.get_last_error()
-            raise RuntimeError(f"Failed to run HELM scenario {scenario_name}: {error}")
-
-        return result
-
     def run_helm_benchmark(
         self,
         plugin_path: str,
@@ -256,26 +221,6 @@ class Controller:
             raise RuntimeError(f"Failed to run HELM benchmark {run_spec_name}: {error}")
 
         return result
-
-    def load_helm_scenario(self, scenario_path: str) -> None:
-        """
-        Load and validate a user-provided HELM scenario file
-
-        Args:
-            scenario_path: Path to Python file containing Scenario subclass
-        """
-        if not self._initialized:
-            raise RuntimeError("Controller not initialized. Call init() first.")
-
-        print(f"[Controller] Loading HELM scenario from: {scenario_path}")
-
-        result = self._lib.controller_load_helm_scenario(scenario_path.encode('utf-8'))
-
-        if result != 0:
-            error = self.get_last_error()
-            raise RuntimeError(f"Failed to load HELM scenario: {error}")
-
-        print("[Controller] HELM scenario loaded successfully")
 
     def get_helm_results(self, output_path: str = "/tmp/helm_output") -> Dict[str, Any]:
         """

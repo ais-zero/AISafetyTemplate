@@ -8,17 +8,17 @@ IMPORTANT: You can ONLY import the Controller!
 All other functionality is provided through the Controller API.
 
 OFFLINE MODE:
-This eval container has NO INTERNET ACCESS. All datasets and dependencies
+The container that runs the eval has NO INTERNET ACCESS. All datasets and dependencies
 must be pre-downloaded before building the container:
 - Datasets: /app/offline_datasets/ (run download_datasets.sh)
 - Python packages: /app/offline_packages/ (run download_offline_packages.sh)
 
 HELM Integration:
-The Controller provides full HELM (Holistic Evaluation of Language Models) integration.
-You can run HELM benchmarks in three ways:
-1. run_helm_scenario() - Run a built-in HELM scenario by name
-2. run_helm_benchmark() - Run with your custom run spec and scenario files
-3. Manual evaluation using get_model_client() with HELM-style prompts
+The Controller provides HELM (Holistic Evaluation of Language Models) integration.
+You can run HELM benchmarks in two ways:
+1. run_helm_benchmark() - Run with your custom run spec and scenario files
+2. Manual evaluation using get_model_client() with HELM-style prompts
+HELM Docs: https://crfm-helm.readthedocs.io
 
 Dataset Loading:
 The Controller provides load_dataset() for loading offline datasets.
@@ -41,13 +41,7 @@ def main():
     print("=" * 60)
 
     # =========================================================================
-    # OPTION A: Run a built-in HELM scenario
-    # =========================================================================
-    # result = controller.run_helm_scenario("mmlu")
-    # print(f"[HELM] Scenario result: {result}")
-
-    # =========================================================================
-    # OPTION B: Run HELM with your custom run spec file
+    # OPTION A: Run HELM with your custom run spec file
     # =========================================================================
     # This is the recommended approach for custom evaluations.
     # See helm-example-&-sandboxing/user_components/example_eval/ for examples.
@@ -66,14 +60,14 @@ def main():
     # print(f"[HELM] Detailed results: {helm_results}")
 
     # =========================================================================
-    # OPTION C: Manual evaluation with model client (non-HELM)
+    # OPTION B: Manual evaluation with model client (non-HELM)
     # =========================================================================
     # client = controller.get_model_client()
     # response = client.complete("What is the capital of France?")
     # print(f"Response: {response}")
 
     # =========================================================================
-    # OPTION D: Load dataset and run custom evaluation (OFFLINE)
+    # OPTION C: Load dataset and run custom evaluation (OFFLINE)
     # =========================================================================
     # NOTE: Datasets must be pre-downloaded to /app/offline_datasets/
     # Run download_datasets.sh before building the container
@@ -129,10 +123,7 @@ def run_helm_example(controller):
     1. my_scenario.py - Your Scenario subclass
     2. my_run_specs.py - Your @run_spec_function decorator
     """
-    # First, load your custom scenario (validates the file)
-    controller.load_helm_scenario("/app/eval/my_scenario.py")
-
-    # Then run the benchmark
+    # Run the benchmark with your custom plugin
     result = controller.run_helm_benchmark(
         plugin_path="/app/eval/my_run_specs.py",
         run_spec_name="my_custom_eval",
