@@ -4,7 +4,9 @@
 FROM python:3.11-slim
 
 # Security: Run as non-root user
-RUN groupadd -r proxy && useradd -r -g proxy proxy
+RUN set -e; \
+    if ! getent group proxy >/dev/null; then groupadd -r proxy; fi; \
+    if ! id -u proxy >/dev/null 2>&1; then useradd -r -g proxy proxy; fi
 
 WORKDIR /app
 

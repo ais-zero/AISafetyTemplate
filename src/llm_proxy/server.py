@@ -31,7 +31,6 @@ app = Flask(__name__)
 
 # Configuration
 HUGGINGFACE_API_BASE = "https://router.huggingface.co/hf-inference/v1"
-HUGGINGFACE_MODEL = os.environ.get('HF_MODEL', 'HuggingFaceTB/SmolLM3-3B')
 HF_API_KEY = os.environ.get('HF_API_KEY', os.environ.get('LLM_API_KEY', ''))
 
 # Rate limiting
@@ -40,10 +39,8 @@ request_counts: Dict[str, list] = {}
 
 # Allowed models (whitelist)
 ALLOWED_MODELS = {
-    'smollm3-3b',
-    'openai/smollm3-3b',
-    'HuggingFaceTB/SmolLM3-3B',
-    'gpt-4o-mini',  # Map to smollm3-3b
+    'HuggingFaceTB/SmolLM3-3B': {"owned_by": "huggingface"},
+    'HuggingFaceTB/SmolLM2-1.7B': {"owned_by": "huggingface"},
 }
 
 
@@ -93,9 +90,13 @@ def validate_request(data: Dict[str, Any]) -> Optional[str]:
             return f"Invalid role: {msg['role']}"
 
     # Validate model
-    model = data.get('model', 'smollm3-3b')
+    if 'model' not in data:
+        return "Missing 'model' field"
+    model = data['model']
+    if not isinstance(model, str) or not model:
+        return "'model' must be a non-empty string"
     if model not in ALLOWED_MODELS:
-        return f"Model '{model}' not allowed. Use: {ALLOWED_MODELS}"
+        return f"Model '{model}' not allowed. Use: {list(ALLOWED_MODELS)}"
 
     # Validate token limits
     max_tokens = data.get('max_tokens', 150)
@@ -127,9 +128,11 @@ def chat_completions():
 
         logger.info(f"Received chat completion request, messages: {len(data['messages'])}")
 
+        requested_model = data['model']
+
         # Prepare request for HuggingFace
         hf_request = {
-            "model": HUGGINGFACE_MODEL,
+            "model": requested_model,
             "messages": data['messages'],
             "temperature": min(max(data.get('temperature', 0.7), 0.0), 2.0),
             "max_tokens": min(data.get('max_tokens', 150), 4096),
@@ -175,16 +178,18 @@ def chat_completions():
 @app.route('/v1/models', methods=['GET'])
 def list_models():
     """List available models"""
+    models = []
+    for model_id, model_info in ALLOWED_MODELS.items():
+        owner = model_info.get("owned_by", "huggingface")
+        models.append({
+            "id": model_id,
+            "object": "model",
+            "created": 1700000000,
+            "owned_by": owner
+        })
     return jsonify({
         "object": "list",
-        "data": [
-            {
-                "id": "openai/smollm3-3b",
-                "object": "model",
-                "created": 1700000000,
-                "owned_by": "huggingface"
-            }
-        ]
+        "data": models
     })
 
 
@@ -195,7 +200,7 @@ def health():
     return jsonify({
         "status": status,
         "api_key_configured": bool(HF_API_KEY),
-        "model": HUGGINGFACE_MODEL
+        "allowed_models": list(ALLOWED_MODELS)
     })
 
 
@@ -206,7 +211,7 @@ def root():
         "service": "LLM Proxy",
         "version": "0.2.0",
         "backend": "HuggingFace Inference API",
-        "model": HUGGINGFACE_MODEL,
+        "allowed_models": list(ALLOWED_MODELS),
         "endpoints": {
             "chat_completions": "/v1/chat/completions",
             "models": "/v1/models",
@@ -228,7 +233,7 @@ if __name__ == '__main__':
     else:
         logger.info(f"API key configured (length: {len(HF_API_KEY)})")
 
-    logger.info(f"Using model: {HUGGINGFACE_MODEL}")
+    logger.info(f"Allowed models: {list(ALLOWED_MODELS)}")
     logger.info("Starting LLM Proxy Server on port 8000")
 
     # Use waitress for production-grade serving

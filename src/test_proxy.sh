@@ -26,7 +26,7 @@ CHAT_RESPONSE=$(curl -s -X POST http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [{"role": "user", "content": "Say hello in one word"}],
-    "model": "gpt-4o-mini",
+    "model": "HuggingFaceTB/SmolLM2-1.7B",
     "max_tokens": 10
   }')
 
@@ -36,6 +36,20 @@ echo "Chat Response: $CHAT_RESPONSE"
 MESSAGE=$(echo $CHAT_RESPONSE | python3 -c "import sys, json; data=json.load(sys.stdin); print(data['choices'][0]['message']['content'])" 2>/dev/null || echo "Failed to parse")
 echo ""
 echo "Model Response: $MESSAGE"
+
+
+# Test chat completions with invalid model
+echo ""
+echo "4. Testing chat completions endpoint with invalid model..."
+INVALID_MODEL_RESPONSE=$(curl -s -X POST http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "content": "Say hello in one word"}],
+    "model": "openai/gpt-4o-mini",
+    "max_tokens": 10
+  }')
+
+echo "Invalid Model Response: $INVALID_MODEL_RESPONSE"
 
 echo ""
 echo "================================"
