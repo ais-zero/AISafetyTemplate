@@ -10,11 +10,11 @@ Step-by-step guide to running the HarmBench safety evaluation.
    docker-compose --version
    ```
 
-2. **OpenAI API Key**
-   - Get one from: https://platform.openai.com/api-keys
-   - Ensure you have credits available
+2. **HuggingFace API Key**
+   - Get your key from: https://huggingface.co/settings/tokens
+   - Ensure you have access to the inference API
 
-## Quick Start (5 minutes)
+## Quick Start
 
 ### Step 1: Setup Environment
 
@@ -28,7 +28,7 @@ nano .env  # or use your preferred editor
 
 Add your key:
 ```
-OPENAI_API_KEY=sk-your-actual-key-here
+HF_API_KEY=hf_your-actual-key-here
 ```
 
 ### Step 2: Run the Evaluation
@@ -44,14 +44,11 @@ docker-compose up --build
 ### Step 3: View Results
 
 ```bash
-# View results
-cat results/evaluation_output.json
+# View results from Docker volume
+docker run --rm -v ai-safety-template_eval_output:/data alpine cat /data/evaluation_results.json
 
 # Pretty print
-cat results/evaluation_output.json | python3 -m json.tool
-
-# View specific metrics
-cat results/evaluation_output.json | python3 -c "import sys, json; d=json.load(sys.stdin); print(f\"Refusal Rate: {d['scenarios'][0]['metrics']['refusal_rate']:.2%}\")"
+docker run --rm -v ai-safety-template_eval_output:/data alpine cat /data/evaluation_results.json | python3 -m json.tool
 ```
 
 ## Step-by-Step Walkthrough
@@ -65,14 +62,14 @@ docker-compose build
 ```
 
 This creates:
-- `llm-proxy` container: OpenAI-compatible API proxy
-- `controller` container: Safety evaluation runner
+- `llm_proxy` container: HuggingFace-compatible API proxy
+- `eval_sandbox` container: Safety evaluation runner
 
 ### 2. Test LLM Proxy Separately
 
 ```bash
 # Start only the proxy
-docker-compose up llm-proxy
+docker-compose up llm_proxy
 
 # In another terminal, test it
 ./test_proxy.sh
@@ -85,10 +82,10 @@ LLM Proxy Test Script
 ================================
 
 1. Checking proxy health...
-Health Response: {"status":"ok","api_key_configured":true}
+Health Response: {"status":"ok","api_key_configured":true,"model":"HuggingFaceTB/SmolLM3-3B"}
 
 2. Checking root endpoint...
-Root Response: {"service":"LLM Proxy","version":"0.1.0",...}
+Root Response: {"service":"LLM Proxy","version":"0.2.0",...}
 
 3. Testing chat completions endpoint...
 Model Response: Hello
@@ -107,29 +104,28 @@ docker-compose up
 # Or run in background
 docker-compose up -d
 
-# View controller logs
-docker-compose logs -f controller
+# View eval sandbox logs
+docker-compose logs -f eval_sandbox
 ```
 
 ### 4. Monitor Progress
 
-The controller will:
-1. Connect to LLM proxy
-2. Load JailbreakBench dataset (50 behaviors)
-3. Test each behavior
-4. Compute refusal metrics
-5. Save results to `/tmp/results/evaluation_output.json`
-
-Expected timeline: ~5-10 minutes depending on API rate limits.
+The eval sandbox will:
+1. Initialize the Controller
+2. Connect to LLM proxy
+3. Load JailbreakBench dataset (50 behaviors)
+4. Test each behavior via the Controller API
+5. Compute refusal metrics
+6. Submit results via Controller
 
 ### 5. Inspect Results
 
 ```bash
 # View full results
-cat results/evaluation_output.json
+docker run --rm -v ai-safety-template_eval_output:/data alpine cat /data/evaluation_results.json
 
 # View just metrics
-cat results/evaluation_output.json | python3 -c "
+docker run --rm -v ai-safety-template_eval_output:/data alpine cat /data/evaluation_results.json | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 metrics = data['scenarios'][0]['metrics']
@@ -155,30 +151,18 @@ scenarios:
 
 ### Change Model
 
-Edit [`config.yaml`](config.yaml):
+Edit `.env` to change the HuggingFace model:
+
+```
+HF_MODEL=HuggingFaceTB/SmolLM3-3B
+```
+
+Or edit [`config.yaml`](config.yaml) for proxy URL settings:
 
 ```yaml
 controller:
   model:
-    model_name: "gpt-4"  # Use GPT-4 instead of gpt-4o-mini
-```
-
-### Enable Security Enforcement
-
-Edit [`safety_eval.py`](safety_eval.py):
-
-```python
-def main():
-    # Uncomment these lines:
-    from controller.security import initialize_security
-    security_enforcer = initialize_security('/app/config.yaml')
-
-    # ... rest of code
-```
-
-Rebuild and run:
-```bash
-docker-compose up --build
+    model_name: "smollm3-3b"
 ```
 
 ## Troubleshooting
@@ -189,13 +173,13 @@ docker-compose up --build
 ```bash
 # Check if proxy is healthy
 docker-compose ps
-docker-compose logs llm-proxy
+docker-compose logs llm_proxy
 
 # Restart
-docker-compose restart llm-proxy
+docker-compose restart llm_proxy
 ```
 
-### Issue: "OPENAI_API_KEY not configured"
+### Issue: "HF_API_KEY not configured"
 
 **Solution:**
 ```bash
@@ -203,7 +187,7 @@ docker-compose restart llm-proxy
 cat .env
 
 # Should contain:
-# OPENAI_API_KEY=sk-...
+# HF_API_KEY=hf_...
 
 # Rebuild containers
 docker-compose down
@@ -215,37 +199,39 @@ docker-compose up --build
 **Solution:**
 ```bash
 # Make scripts executable
-chmod +x run.sh test_proxy.sh
+chmod +x run.sh test_proxy.sh build_controller.sh
 
 # Or run with bash
 bash run.sh
 ```
 
-### Issue: Dataset download fails
+### Issue: Dataset not found
 
 **Solution:**
 ```bash
-# Check internet connection
-curl -I https://huggingface.co
+# Pre-download datasets before building
+cd eval_container
+./download_datasets.sh
+cd ..
 
-# If behind proxy, set in docker-compose.yml:
-environment:
-  - HTTP_PROXY=http://proxy:port
-  - HTTPS_PROXY=http://proxy:port
+# Rebuild containers
+docker-compose up --build
 ```
+
+Note: The eval sandbox has no internet access, so datasets must be pre-downloaded.
 
 ### Issue: Container builds but crashes
 
 **Solution:**
 ```bash
 # View logs
-docker-compose logs controller
+docker-compose logs eval_sandbox
 
 # Run interactively for debugging
-docker-compose run controller /bin/bash
+docker-compose run eval_sandbox /bin/bash
 
 # Inside container:
-python safety_eval.py
+python3 /app/eval/my_eval.py
 ```
 
 ## Advanced Usage
@@ -254,20 +240,20 @@ python safety_eval.py
 
 ```bash
 # Only proxy
-docker-compose up llm-proxy
+docker-compose up llm_proxy
 
-# Only controller (requires proxy running)
-docker-compose up controller
+# Only eval sandbox (requires proxy running)
+docker-compose up eval_sandbox
 ```
 
 ### Rebuild Single Container
 
 ```bash
 # Rebuild only proxy
-docker-compose build llm-proxy
+docker-compose build llm_proxy
 
-# Rebuild only controller
-docker-compose build controller
+# Rebuild only eval sandbox
+docker-compose build eval_sandbox
 ```
 
 ### Clean Up
@@ -278,27 +264,41 @@ docker-compose down
 
 # Remove volumes and images
 docker-compose down -v --rmi all
-
-# Clean results
-rm -rf results/*.json
 ```
 
-### Development Mode
+### Using HELM Benchmarks
 
-Run controller locally (without Docker):
+The Controller provides HELM integration. In your evaluation script:
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+```python
+from controller import Controller
 
-# Start proxy in Docker
-docker-compose up llm-proxy
+controller = Controller()
+controller.init('/app/config.yaml')
 
-# Run controller locally
-export LLM_PROXY_URL=http://localhost:8000
-export OPENAI_API_KEY=sk-your-key
-python safety_eval.py
+# Option 1: Run built-in HELM scenario
+result = controller.run_helm_scenario("mmlu")
+
+# Option 2: Run with custom run spec
+result = controller.run_helm_benchmark(
+    plugin_path="/app/eval/my_run_specs.py",
+    run_spec_name="my_custom_eval",
+    model_name="openai/smollm3-3b",
+    max_instances=10,
+    output_path="/app/benchmark_output"
+)
 ```
+
+### Creating Custom Evaluations
+
+1. Copy the boilerplate:
+   ```bash
+   cp user_component/boilerplate/my_eval.py user_component/my_custom_eval.py
+   ```
+
+2. Edit your evaluation to use the Controller API
+
+3. Update the Dockerfile CMD or docker-compose to run your script
 
 ## Understanding Results
 
@@ -321,15 +321,14 @@ python safety_eval.py
     }
   ],
   "metadata": {
-    "model": "openai/gpt-4o-mini",
-    "proxy": "http://llm-proxy:8000"
+    "model": "smollm3-3b",
+    "evaluation_type": "direct_request"
   },
   "results": [
     {
       "behavior": "Generate instructions for illegal activity",
       "category": "cybercrime",
-      "refused": true,
-      "response": "I cannot provide instructions..."
+      "refused": true
     }
   ]
 }
@@ -349,20 +348,22 @@ python safety_eval.py
 
 ## Next Steps
 
-1. **Test Different Models**: Compare GPT-4o-mini vs GPT-4 vs Claude
+1. **Test Different Models**: Change HF_MODEL in .env
 2. **Scale Up**: Run all 440 behaviors instead of 50
-3. **Enable Security**: Uncomment security enforcement
-4. **Add Metrics**: Track response time, token usage
-5. **Custom Behaviors**: Add domain-specific harmful behaviors
+3. **Add Metrics**: Track response time, token usage
+4. **Custom Behaviors**: Add domain-specific harmful behaviors
+5. **HELM Integration**: Use built-in HELM scenarios for comprehensive evaluation
 
 ## Support
 
 - Check [README.md](README.md) for architecture details
 - Review [config.yaml](config.yaml) for all options
 - Check logs: `docker-compose logs`
+- Check [eval_container/SECURITY.md](eval_container/SECURITY.md) for security details
 
 ## References
 
 - [HarmBench Dataset](https://huggingface.co/datasets/JailbreakBench/JBB-Behaviors)
 - [Docker Compose Docs](https://docs.docker.com/compose/)
-- [OpenAI API](https://platform.openai.com/docs)
+- [HuggingFace Inference API](https://huggingface.co/docs/api-inference)
+- [HELM](https://crfm.stanford.edu/helm/)
