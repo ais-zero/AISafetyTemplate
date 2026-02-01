@@ -15,7 +15,16 @@ A collection of benchmark datasets for evaluating large language models across s
 | Question Answering | NaturalQuestions | 307K+ queries |
 
 ---
+## Version & Sources
 
+| Benchmark | Version | Source | License |
+|-----------|---------|--------|---------|
+| HarmBench | v1.0 (Oct 2023) | [GitHub](https://github.com/centerforaisafety/HarmBench) | Apache 2.0 |
+| AIR-Bench 2024 | 2024 | [HuggingFace](https://huggingface.co/datasets/stanford-crfm/air-bench-2024) | CC-BY-4.0 |
+| MMLU | v1.0 | [HuggingFace](https://huggingface.co/datasets/cais/mmlu) | MIT |
+| GSM8K | v1.0 | [HuggingFace](https://huggingface.co/datasets/openai/gsm8k) | MIT |
+| NaturalQuestions | v1.0 | [Google Cloud](https://ai.google.com/research/NaturalQuestions) | CC BY-SA 3.0 |
+---
 ## Safety & Red Teaming
 
 ### HarmBench
