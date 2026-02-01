@@ -2,7 +2,7 @@
 
 ## Evaluation Coverage
 
-| Evaluation Area | What the Template Measures | What It Provides for Audits |
+| Evaluation Area | What the Template Measures | What It Provides |
 |-----------------|---------------------------|-----------------------------|
 | Safety | Harmful compliance, jailbreaks, refusal quality | Misuse prevention evidence |
 | Knowledge reliability | Factual correctness across domains | Competence baseline |
