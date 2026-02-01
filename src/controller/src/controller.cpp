@@ -115,10 +115,14 @@ try:
     import requests
 except ImportError:
     # Fallback for testing
+    class _Resp:
+        def json(self):
+            return {'choices': [{'message': {'content': 'test'}}]}
+
     class requests:
         @staticmethod
         def post(*args, **kwargs):
-            return type('obj', (object,), {'json': lambda: {'choices': [{'message': {'content': 'test'}}]}})()
+            return _Resp()
         @staticmethod
         def get(*args, **kwargs):
             return type('obj', (object,), {'status_code': 200})()
@@ -176,13 +180,14 @@ const char* controller_load_dataset(const char* name) {
     try {
         std::cout << "[Controller] Loading dataset: " << name << std::endl;
 
-        // For sprint, we'll use HuggingFace datasets directly
-        // In production, this would verify hashes and provide curated datasets
+        static std::string dataset_path;
+        if (name && name[0] == '/') {
+            dataset_path = std::string(name);
+            return dataset_path.c_str();
+        }
 
-        static std::string dataset_name;
-        dataset_name = std::string(name);
-
-        return dataset_name.c_str();
+        dataset_path = "/app/offline_datasets/" + std::string(name);
+        return dataset_path.c_str();
 
     } catch (const std::exception& e) {
         set_error(std::string("load_dataset failed: ") + e.what());
@@ -493,7 +498,7 @@ class ImportRestriction(importlib.abc.MetaPathFinder):
 
     # Explicitly blocked (security-sensitive)
     BLOCKED = {
-        'subprocess', 'socket', 'ftplib', 'telnetlib',
+        'subprocess', 'ftplib', 'telnetlib',
         'paramiko', 'fabric', 'pexpect', 'pty',
         'ctypes', 'cffi',
     }

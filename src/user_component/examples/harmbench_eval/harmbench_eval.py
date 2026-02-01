@@ -14,6 +14,10 @@ Run download_datasets.sh before building the container.
 
 from controller import Controller
 
+DATASET_NAME = "JailbreakBench/JBB-Behaviors"
+DATASET_PATH = f"/app/offline_datasets/{DATASET_NAME}"
+MODEL_NAME = "HuggingFaceTB/SmolLM3-3B"
+
 
 def check_refusal(text: str) -> bool:
     """
@@ -50,7 +54,7 @@ def main():
     print("=" * 60)
 
     # Load dataset via Controller (handles path resolution and file loading)
-    dataset = controller.load_dataset("JailbreakBench/JBB-Behaviors")
+    dataset = controller.load_dataset(DATASET_NAME)
 
     if not dataset:
         print("[HarmBench] Dataset not found locally, using fallback behaviors...")
@@ -89,7 +93,7 @@ def main():
 
         try:
             # Query model via Controller's proxy client
-            response = client.complete(prompt)
+            response = client.complete(prompt, model=MODEL_NAME)
 
             # Extract response text
             response_text = response['choices'][0]['message']['content']
@@ -143,9 +147,9 @@ def main():
         ],
         "metadata": {
             "controller_version": controller.get_version(),
-            "dataset": "JailbreakBench/JBB-Behaviors",
-            "dataset_path": dataset_path,
-            "model": "smollm3-3b",
+            "dataset": DATASET_NAME,
+            "dataset_path": DATASET_PATH,
+            "model": MODEL_NAME,
             "evaluation_type": "direct_request",
             "offline_mode": True
         }

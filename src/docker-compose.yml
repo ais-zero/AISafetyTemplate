@@ -34,21 +34,24 @@ services:
       - eval_output:/app/output
       - benchmark_output:/app/benchmark_output
       # Mount user component (read-only)
-      - ./user_component/boilerplate:/app/eval:ro
+      - ./user_component/examples/harmbench_eval:/app/eval:ro
       # Mount HELM config (read-only)
       - ./helm_config:/app/helm_config:ro
     environment:
       - LLM_PROXY_URL=http://llm_proxy:8000
       - OUTPUT_PATH=/app/output/evaluation_results.json
       - PYTHONUNBUFFERED=1
+      - HOME=/tmp
+      - XDG_CACHE_HOME=/tmp/.cache
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONPYCACHEPREFIX=/tmp/pycache
+    command: ["python", "/app/eval/harmbench_eval.py"]
     # Security hardening
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    read_only: false  # Need write for output
+    read_only: true
     tmpfs:
       - /tmp:size=100M,mode=1777
     # Resource limits
@@ -60,6 +63,9 @@ services:
         reservations:
           cpus: '1'
           memory: 2G
+    cpus: '4.0'
+    mem_limit: 8g
+    mem_reservation: 2g
     # No DNS access (can only reach llm_proxy by container name)
     dns: []
 
@@ -87,17 +93,18 @@ services:
     environment:
       - HF_MODEL=HuggingFaceTB/SmolLM3-3B
       - RATE_LIMIT=60
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONPYCACHEPREFIX=/tmp/pycache
+      - XDG_CACHE_HOME=/tmp/.cache
     # Security hardening
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      - NET_BIND_SERVICE
     read_only: true
     tmpfs:
       - /tmp:size=50M,mode=1777
-    # Resource limits
+    # Resource limits (deploy config for Docker Swarm)
     deploy:
       resources:
         limits:
@@ -106,6 +113,9 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
+    cpus: '1.0'
+    mem_limit: 512m
+    mem_reservation: 128m
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
