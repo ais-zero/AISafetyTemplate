@@ -6,6 +6,13 @@ Copy this file and implement your evaluation logic.
 
 IMPORTANT: You can ONLY import the Controller!
 All other functionality is provided through the Controller API.
+
+HELM Integration:
+The Controller provides full HELM (Holistic Evaluation of Language Models) integration.
+You can run HELM benchmarks in three ways:
+1. run_helm_scenario() - Run a built-in HELM scenario by name
+2. run_helm_benchmark() - Run with your custom run spec and scenario files
+3. Manual evaluation using get_model_client() with HELM-style prompts
 """
 
 from controller import Controller
@@ -23,19 +30,46 @@ def main():
     print(f"[UserComponent] Controller version: {controller.get_version()}")
     print("=" * 60)
 
-    # 2. Your evaluation logic goes here
-    # Example: Load a dataset
-    # dataset_name = controller.load_dataset("JailbreakBench/JBB-Behaviors")
+    # =========================================================================
+    # OPTION A: Run a built-in HELM scenario
+    # =========================================================================
+    # result = controller.run_helm_scenario("mmlu")
+    # print(f"[HELM] Scenario result: {result}")
 
-    # Example: Get model client
+    # =========================================================================
+    # OPTION B: Run HELM with your custom run spec file
+    # =========================================================================
+    # This is the recommended approach for custom evaluations.
+    # See helm-example-&-sandboxing/user_components/example_eval/ for examples.
+    #
+    # result = controller.run_helm_benchmark(
+    #     plugin_path="/app/eval/my_run_specs.py",  # Your @run_spec_function file
+    #     run_spec_name="my_custom_eval",            # Name from decorator
+    #     model_name="openai/gpt-4o-mini",           # Model to evaluate
+    #     max_instances=10,                          # -1 for all
+    #     output_path="/app/benchmark_output"
+    # )
+    # print(f"[HELM] Benchmark result: {result}")
+    #
+    # # Get detailed results
+    # helm_results = controller.get_helm_results("/app/benchmark_output")
+    # print(f"[HELM] Detailed results: {helm_results}")
+
+    # =========================================================================
+    # OPTION C: Manual evaluation with model client (non-HELM)
+    # =========================================================================
     # client = controller.get_model_client()
-    # response = client.complete("Test prompt")
+    # response = client.complete("What is the capital of France?")
+    # print(f"Response: {response}")
 
-    # Example: Run HELM scenario (if implemented)
-    # results = controller.run_helm_scenario("harmbench", config)
+    # =========================================================================
+    # OPTION D: Load dataset and run custom evaluation
+    # =========================================================================
+    # dataset_name = controller.load_dataset("JailbreakBench/JBB-Behaviors")
+    # # Process dataset with your custom logic...
 
-    # 3. Compute your metrics
-    # This is where you implement your specific evaluation logic
+    # 2. Your evaluation logic
+    # Replace this section with your actual evaluation code
     results = {
         "version": "0.1.0",
         "scenarios": [
@@ -54,15 +88,49 @@ def main():
         }
     }
 
-    # 4. Submit results
+    # 3. Submit results
     controller.submit_results(results)
 
-    # 5. Cleanup
+    # 4. Cleanup
     controller.shutdown()
 
     print("=" * 60)
     print("[UserComponent] Evaluation complete!")
     print("=" * 60)
+
+
+def run_helm_example(controller):
+    """
+    Example: Running HELM with custom scenario
+
+    To use this, create two files:
+    1. my_scenario.py - Your Scenario subclass
+    2. my_run_specs.py - Your @run_spec_function decorator
+    """
+    # First, load your custom scenario (validates the file)
+    controller.load_helm_scenario("/app/eval/my_scenario.py")
+
+    # Then run the benchmark
+    result = controller.run_helm_benchmark(
+        plugin_path="/app/eval/my_run_specs.py",
+        run_spec_name="my_custom_eval",
+        model_name="openai/gpt-4o-mini",
+        max_instances=10,
+        output_path="/app/benchmark_output"
+    )
+
+    # Check result status
+    if result.get('status') == 'completed':
+        print(f"[HELM] Success! Evaluated {result.get('instances_evaluated')} instances")
+        print(f"[HELM] Metrics: {result.get('metrics')}")
+    elif result.get('status') == 'helm_not_available':
+        print("[HELM] HELM not installed. Install with: pip install crfm-helm")
+    else:
+        print(f"[HELM] Error: {result.get('error')}")
+
+    # Get detailed results from output files
+    helm_results = controller.get_helm_results("/app/benchmark_output")
+    return helm_results
 
 
 if __name__ == "__main__":

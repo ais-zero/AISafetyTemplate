@@ -5,11 +5,30 @@
 #include <string>
 #include <cstring>
 
+// Forward declarations for HELM wrapper functions
+namespace HELMWrapper {
+    int initialize_helm_environment(const char* proxy_url);
+    void* run_helm_benchmark(
+        const char* plugin_path,
+        const char* run_spec_name,
+        const char* model_name,
+        int max_instances,
+        const char* output_path,
+        const char* proxy_url
+    );
+    void* run_helm_scenario(const char* scenario_name, void* config, const char* proxy_url);
+    int load_helm_scenario(const char* scenario_path);
+    const char* get_helm_results(const char* output_path);
+    const char* get_helm_error();
+}
+
 // Global state
 static std::string g_proxy_url;
 static std::string g_config_path;
 static std::string g_last_error;
+static std::string g_helm_results;
 static bool g_initialized = false;
+static bool g_helm_initialized = false;
 
 // Helper to set last error
 static void set_error(const std::string& error) {
@@ -52,6 +71,14 @@ int controller_init(const char* config_path) {
 
         // Install import hooks for security
         install_import_hooks();
+
+        // Initialize HELM environment
+        if (HELMWrapper::initialize_helm_environment(g_proxy_url.c_str()) == 0) {
+            g_helm_initialized = true;
+            std::cout << "[Controller] HELM environment initialized" << std::endl;
+        } else {
+            std::cout << "[Controller] HELM not available (optional)" << std::endl;
+        }
 
         g_initialized = true;
         std::cout << "[Controller] Initialized successfully" << std::endl;
@@ -172,17 +199,116 @@ void* controller_run_helm_scenario(const char* scenario_name, void* config) {
     try {
         std::cout << "[Controller] Running HELM scenario: " << scenario_name << std::endl;
 
-        // This is a placeholder for HELM integration
-        // In full implementation, this would:
-        // 1. Load HELM module
-        // 2. Run the specified scenario
-        // 3. Return results
+        // Use HELM wrapper to run the scenario
+        void* result = HELMWrapper::run_helm_scenario(
+            scenario_name,
+            config,
+            g_proxy_url.c_str()
+        );
 
-        // For now, return success indicator
-        Py_RETURN_NONE;
+        if (!result) {
+            const char* helm_error = HELMWrapper::get_helm_error();
+            set_error(std::string("HELM scenario failed: ") + (helm_error ? helm_error : "Unknown error"));
+            return nullptr;
+        }
+
+        std::cout << "[Controller] HELM scenario completed" << std::endl;
+        return result;
 
     } catch (const std::exception& e) {
         set_error(std::string("run_helm_scenario failed: ") + e.what());
+        return nullptr;
+    }
+}
+
+void* controller_run_helm_benchmark(
+    const char* plugin_path,
+    const char* run_spec_name,
+    const char* model_name,
+    int max_instances,
+    const char* output_path
+) {
+    if (!g_initialized) {
+        set_error("Controller not initialized");
+        return nullptr;
+    }
+
+    try {
+        std::cout << "[Controller] Running HELM benchmark: " << run_spec_name << std::endl;
+
+        // Use HELM wrapper to run the full benchmark
+        void* result = HELMWrapper::run_helm_benchmark(
+            plugin_path,
+            run_spec_name,
+            model_name,
+            max_instances,
+            output_path,
+            g_proxy_url.c_str()
+        );
+
+        if (!result) {
+            const char* helm_error = HELMWrapper::get_helm_error();
+            set_error(std::string("HELM benchmark failed: ") + (helm_error ? helm_error : "Unknown error"));
+            return nullptr;
+        }
+
+        std::cout << "[Controller] HELM benchmark completed" << std::endl;
+        return result;
+
+    } catch (const std::exception& e) {
+        set_error(std::string("run_helm_benchmark failed: ") + e.what());
+        return nullptr;
+    }
+}
+
+int controller_load_helm_scenario(const char* scenario_path) {
+    if (!g_initialized) {
+        set_error("Controller not initialized");
+        return -1;
+    }
+
+    try {
+        std::cout << "[Controller] Loading HELM scenario: " << scenario_path << std::endl;
+
+        int result = HELMWrapper::load_helm_scenario(scenario_path);
+
+        if (result != 0) {
+            const char* helm_error = HELMWrapper::get_helm_error();
+            set_error(std::string("Failed to load HELM scenario: ") + (helm_error ? helm_error : "Unknown error"));
+            return -1;
+        }
+
+        std::cout << "[Controller] HELM scenario loaded successfully" << std::endl;
+        return 0;
+
+    } catch (const std::exception& e) {
+        set_error(std::string("load_helm_scenario failed: ") + e.what());
+        return -1;
+    }
+}
+
+const char* controller_get_helm_results(const char* output_path) {
+    if (!g_initialized) {
+        set_error("Controller not initialized");
+        return nullptr;
+    }
+
+    try {
+        std::cout << "[Controller] Getting HELM results from: " << output_path << std::endl;
+
+        const char* results = HELMWrapper::get_helm_results(output_path);
+
+        if (!results || strlen(results) == 0) {
+            set_error("No HELM results found");
+            return nullptr;
+        }
+
+        // Store results in static string for return
+        g_helm_results = std::string(results);
+        return g_helm_results.c_str();
+
+    } catch (const std::exception& e) {
+        set_error(std::string("get_helm_results failed: ") + e.what());
         return nullptr;
     }
 }
