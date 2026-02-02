@@ -16,7 +16,7 @@ Not to replace existing safety, governance, or policy initiatives but to united 
 A way to develop post-compute, non-inference-time AI safety work with a streamlined template, containerized and ready to be run inside a Trusted Execution Environment (TEE).
 ![Visual overview of components](https://github.com/davidg-apart/AISafetyTemplate/blob/aca0e653e092e36f35b6aed5b0e22478a2f53acc/template-idea.png)
 The Controller serves as the only external dependancy for the UserComponent from which evulations are derived. It orchestrates the environment, restricts access, handles isolated model interfacing & containerization.
-Using Cython/C++ to add security, memory isolation, performance & precision, imported by the UserComponent as a dll.
+Using Cython/C++ to add security, memory isolation (not implemented for this sprint), performance & precision, imported by the UserComponent as a dll.
 For this sprint, the AI Assembly (model/system/framework) will be mocked with a proxied interface to a hosted inference model. In this version it does not contain blockchain or TEE components.
 
 #### Why target Python Environments?
